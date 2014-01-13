@@ -202,9 +202,17 @@ static int lp8550_restore(void)
 
 static int lp8550_init(void)
 {
-	int ret;
+	int ret, i;
 
-	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, INIT_BRIGHTNESS);
+	for (i = 0; i < 10; i++) {
+		ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, INIT_BRIGHTNESS);
+		if (!ret)
+			break;
+	}
+
+	if (i > 0)
+		pr_err("mba6x_bl: Init retries: %d\n", i);
+
 	if (ret)
 		return ret;
 
