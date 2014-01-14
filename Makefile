@@ -4,9 +4,7 @@ KVERSION := $(shell uname -r)
 KDIR := /lib/modules/$(KVERSION)/build
 PWD := $(shell pwd)
 
-all: default
-
-default:
+all:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 clean:
