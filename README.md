@@ -16,6 +16,12 @@ You also need to notify the Intel Xorg driver what backlight device to use. Here
         Option          "Backlight"     "mba6x_backlight"
     EndSection
 
+At this point you can load the module
+
+    sudo modprobe mba6x_bl
+    
+Then restart X (usually log in / log out will do the trick). If things are working as expected, make the module load automatically at boot. See your distributions documentation for how to do this. I will add DMI detection for the module which will take care of this last step in the future.
+
 ## Debian dkms package
 
 You can either follow the long route <https://wiki.kubuntu.org/Kernel/Dev/DKMSPackaging>, or
