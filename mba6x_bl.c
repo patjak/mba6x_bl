@@ -319,3 +319,5 @@ module_exit(mba6x_bl_exit);
 MODULE_AUTHOR("Patrik Jakobsson <patrik.r.jakobsson@gmail.com>");
 MODULE_DESCRIPTION("MacBook Air 6,1 and 6,2 backlight driver");
 MODULE_LICENSE("GPL");
+
+MODULE_ALIAS("dmi:*:pnMacBookAir6*");
