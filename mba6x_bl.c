@@ -84,7 +84,7 @@ static int lp8550_reg_read(u8 reg, u8 *val)
 
 	*val = (u8)result->integer.value;
 out:
-	ACPI_FREE_BUFFER(buffer);
+	kfree(buffer.pointer);
 	return ret;
 }
 
@@ -134,7 +134,7 @@ static int lp8550_reg_write(u8 reg, u8 val)
 	}
 
 out:
-	ACPI_FREE_BUFFER(buffer);
+	kfree(buffer.pointer);
 	return ret;
 }
 
