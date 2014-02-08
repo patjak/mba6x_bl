@@ -138,12 +138,19 @@ out:
 	return ret;
 }
 
+static inline int map_brightness(int b)
+{
+	return ((b * b + 254) / 255);
+}
+
 static int set_brightness(int brightness)
 {
 	int ret;
 
 	if (brightness < 0 || brightness > 255)
 		return -EINVAL;
+
+	brightness = map_brightness(brightness);
 
 	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, (u8)brightness);
 	return ret;
