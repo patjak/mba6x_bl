@@ -138,12 +138,16 @@ out:
 	return ret;
 }
 
+static int lp8550_init(void);
+
 static int set_brightness(int brightness)
 {
 	int ret;
 
 	if (brightness < 0 || brightness > 255)
 		return -EINVAL;
+
+	lp8550_init();
 
 	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, (u8)brightness);
 	return ret;
