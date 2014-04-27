@@ -137,8 +137,8 @@ static int lp8550_reg_write(u8 reg, u8 val)
 	result = buffer.pointer;
 
 	if (result->type != ACPI_TYPE_INTEGER || result->integer.value != 1) {
-		pr_debug("mba6x_bl: Invalid response in reg: 0x%x (len: %Ld)\n", reg,
-			 buffer.length);
+		pr_debug("mba6x_bl: Invalid response at reg: 0x%x (len: %Ld)\n",
+			 reg, buffer.length);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -301,7 +301,7 @@ static int platform_resume(struct platform_device *dev)
 
 static void platform_shutdown(struct platform_device *dev)
 {
-	/* We must restore or screen might go blank on reboot */
+	/* We must restore or screen might go black on reboot */
 	lp8550_restore();
 }
 
@@ -326,7 +326,8 @@ static int __init mba6x_bl_init(void)
 		return ret;
 	}
 
-	platform_device = platform_device_register_simple("mba6x_bl", -1, NULL, 0);
+	platform_device = platform_device_register_simple("mba6x_bl", -1, NULL,
+							  0);
 	return 0;
 }
 
