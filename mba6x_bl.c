@@ -296,7 +296,11 @@ static int platform_remove(struct platform_device *dev)
 
 static int platform_resume(struct platform_device *dev)
 {
-	return lp8550_init();
+	/*
+	 * Firmware restores the LP8550 for us but we might need some tweaking
+	 * in the future if firmware behaviour is changed.
+	 */
+	return 0;
 }
 
 static void platform_shutdown(struct platform_device *dev)
