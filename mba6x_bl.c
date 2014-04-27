@@ -22,7 +22,9 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/backlight.h>
+#include <linux/acpi.h>
 #include <acpi/acpi.h>
+#include <acpi/video.h>
 
 #define LP8550_SMBUS_ADDR	(0x58 >> 1)
 #define LP8550_REG_BRIGHTNESS	0
@@ -274,6 +276,9 @@ static int platform_probe(struct platform_device *dev)
 		pr_err("mba6x_bl: Failed to register backlight device\n");
 		return PTR_ERR(backlight_device);
 	}
+
+	acpi_video_dmi_promote_vendor();
+	acpi_video_unregister();
 
 	backlight_update_status(backlight_device);
 
