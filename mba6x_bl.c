@@ -37,18 +37,22 @@
 
 #define INIT_BRIGHTNESS		150
 
-static struct {
-	u8 brightness;	/* Brightness control */
-	u8 dev_ctl;	/* Device control */
-	u8 fault;	/* Fault indication */
-	u8 ident;	/* Identification */
-	u8 direct_ctl;	/* Direct control */
-	u8 temp_msb;	/* Temperature MSB  */
-	u8 temp_lsb;	/* Temperature LSB */
-} lp8550_regs;
-
 static struct platform_device *platform_device;
 static struct backlight_device *backlight_device;
+
+static struct {
+	struct delayed_work work;
+	struct mutex mutex;
+	struct {
+		u8 brightness;	/* Brightness control */
+		u8 dev_ctl;	/* Device control */
+		u8 fault;	/* Fault indication */
+		u8 ident;	/* Identification */
+		u8 direct_ctl;	/* Direct control */
+		u8 temp_msb;	/* Temperature MSB  */
+		u8 temp_lsb;	/* Temperature LSB */
+	} lp8550_regs;
+} dev_priv;
 
 static int lp8550_reg_read(u8 reg, u8 *val)
 {
@@ -60,9 +64,11 @@ static int lp8550_reg_read(u8 reg, u8 *val)
 	union acpi_object *result;
 	int ret = 0;
 
+	mutex_lock(&dev_priv.mutex);
+
 	status = acpi_get_handle(NULL, "\\_SB.PCI0.SBUS.SRDB", &handle);
 	if (ACPI_FAILURE(status)) {
-		pr_debug("mba6x_bl: Failed to get acpi handle\n");
+		pr_err("mba6x_bl: Failed to get acpi handle\n");
 		ret = -ENODEV;
 		goto out;
 	}
@@ -78,7 +84,7 @@ static int lp8550_reg_read(u8 reg, u8 *val)
 
 	status = acpi_evaluate_object(handle, NULL, &arg_list, &buffer);
 	if (ACPI_FAILURE(status)) {
-		pr_debug("mba6x_bl: Failed to read reg: 0x%x\n", reg);
+		pr_err("mba6x_bl: Failed to read reg: 0x%x\n", reg);
 		ret = -ENODEV;
 		goto out;
 	}
@@ -86,7 +92,7 @@ static int lp8550_reg_read(u8 reg, u8 *val)
 	result = buffer.pointer;
 
 	if (result->type != ACPI_TYPE_INTEGER) {
-		pr_debug("mba6x_bl: Invalid response in reg: 0x%x (len: %Ld)\n",
+		pr_err("mba6x_bl: Invalid response in reg: 0x%x (len: %Ld)\n",
 			 reg, buffer.length);
 		ret = -EINVAL;
 		goto out;
@@ -94,6 +100,7 @@ static int lp8550_reg_read(u8 reg, u8 *val)
 
 	*val = (u8)result->integer.value;
 out:
+	mutex_unlock(&dev_priv.mutex);
 	kfree(buffer.pointer);
 	return ret;
 }
@@ -108,9 +115,11 @@ static int lp8550_reg_write(u8 reg, u8 val)
 	union acpi_object *result;
 	int ret = 0;
 
+	mutex_lock(&dev_priv.mutex);
+
 	status = acpi_get_handle(NULL, "\\_SB.PCI0.SBUS.SWRB", &handle);
 	if (ACPI_FAILURE(status)) {
-		pr_debug("mba6x_bl: Failed to get acpi handle\n");
+		pr_err("mba6x_bl: Failed to get acpi handle\n");
 		ret = -ENODEV;
 		goto out;
 	}
@@ -129,7 +138,7 @@ static int lp8550_reg_write(u8 reg, u8 val)
 
 	status = acpi_evaluate_object(handle, NULL, &arg_list, &buffer);
 	if (ACPI_FAILURE(status)) {
-		pr_debug("mba6x_bl: Failed to write reg: 0x%x\n", reg);
+		pr_err("mba6x_bl: Failed to write reg: 0x%x\n", reg);
 		ret = -ENODEV;
 		goto out;
 	}
@@ -137,13 +146,14 @@ static int lp8550_reg_write(u8 reg, u8 val)
 	result = buffer.pointer;
 
 	if (result->type != ACPI_TYPE_INTEGER || result->integer.value != 1) {
-		pr_debug("mba6x_bl: Invalid response at reg: 0x%x (len: %Ld)\n",
+		pr_err("mba6x_bl: Invalid response at reg: 0x%x (len: %Ld)\n",
 			 reg, buffer.length);
 		ret = -EINVAL;
 		goto out;
 	}
 
 out:
+	mutex_unlock(&dev_priv.mutex);
 	kfree(buffer.pointer);
 	return ret;
 }
@@ -153,8 +163,6 @@ static inline int map_brightness(int b)
 	return ((b * b + 254) / 255);
 }
 
-static int lp8550_init(void);
-
 static int set_brightness(int brightness)
 {
 	int ret;
@@ -162,7 +170,10 @@ static int set_brightness(int brightness)
 	if (brightness < 0 || brightness > 255)
 		return -EINVAL;
 
-	lp8550_init();
+	ret = lp8550_reg_write(LP8550_REG_DEV_CTL, 0x05);
+	if (ret)
+		return -ENODEV;
+
 	brightness = map_brightness(brightness);
 	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, (u8)brightness);
 
@@ -176,7 +187,10 @@ static int get_brightness(struct backlight_device *bdev)
 
 static int update_status(struct backlight_device *bdev)
 {
-	return set_brightness(bdev->props.brightness);
+	/* We lock when writing to the SMBUS so work must be scheduled */
+	schedule_delayed_work(&dev_priv.work, 0);
+
+	return 0;
 }
 
 static int lp8550_probe(void)
@@ -199,11 +213,13 @@ static int lp8550_save(void)
 {
 	int ret;
 
-	ret = lp8550_reg_read(LP8550_REG_DEV_CTL, &lp8550_regs.dev_ctl);
+	ret = lp8550_reg_read(LP8550_REG_DEV_CTL,
+			      &dev_priv.lp8550_regs.dev_ctl);
 	if (ret)
 		return ret;
 
-	ret = lp8550_reg_read(LP8550_REG_BRIGHTNESS, &lp8550_regs.brightness);
+	ret = lp8550_reg_read(LP8550_REG_BRIGHTNESS,
+			      &dev_priv.lp8550_regs.brightness);
 	return ret;
 }
 
@@ -212,31 +228,13 @@ static int lp8550_restore(void)
 {
 	int ret;
 
-	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, lp8550_regs.brightness);
+	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS,
+			       dev_priv.lp8550_regs.brightness);
 	if (ret)
 		return ret;
 
-	ret = lp8550_reg_write(LP8550_REG_DEV_CTL, lp8550_regs.dev_ctl);
-	return ret;
-}
-
-static int lp8550_init(void)
-{
-	int ret, i;
-
-	for (i = 0; i < 10; i++) {
-		ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, INIT_BRIGHTNESS);
-		if (!ret)
-			break;
-	}
-
-	if (i > 0)
-		pr_err("mba6x_bl: Init retries: %d\n", i);
-
-	if (ret)
-		return ret;
-
-	ret = lp8550_reg_write(LP8550_REG_DEV_CTL, 0x05);
+	ret = lp8550_reg_write(LP8550_REG_DEV_CTL,
+			       dev_priv.lp8550_regs.dev_ctl);
 	return ret;
 }
 
@@ -247,20 +245,24 @@ static struct backlight_ops backlight_ops = {
 
 static struct platform_driver drv;
 
+static void brightness_work(struct work_struct *work)
+{
+	set_brightness(backlight_device->props.brightness);
+}
+
 static int platform_probe(struct platform_device *dev)
 {
 	struct backlight_properties props;
 	int ret;
+
+	mutex_init(&dev_priv.mutex);
+	INIT_DELAYED_WORK(&dev_priv.work, brightness_work);
 
 	ret = lp8550_probe();
 	if (ret)
 		return ret;
 
 	ret = lp8550_save();
-	if (ret)
-		return ret;
-
-	ret = lp8550_init();
 	if (ret)
 		return ret;
 
@@ -296,10 +298,9 @@ static int platform_remove(struct platform_device *dev)
 
 static int platform_resume(struct platform_device *dev)
 {
-	/*
-	 * Firmware restores the LP8550 for us but we might need some tweaking
-	 * in the future if firmware behaviour is changed.
-	 */
+	/* We must delay this work to let the SMBUS initialize */
+	schedule_delayed_work(&dev_priv.work, 100);
+
 	return 0;
 }
 
