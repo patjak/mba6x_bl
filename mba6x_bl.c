@@ -20,6 +20,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/backlight.h>
 #include <linux/acpi.h>
@@ -247,7 +248,20 @@ static struct platform_driver drv;
 
 static void brightness_work(struct work_struct *work)
 {
-	set_brightness(backlight_device->props.brightness);
+	int ret, i;
+
+	/* Retry for a maximum of 2 seconds */
+	for (i = 0; i < 20; i++) {
+		ret = set_brightness(backlight_device->props.brightness);
+		if (!ret)
+			break;
+		msleep(100);
+	}
+
+	if (i >= 10)
+		pr_info("mba6x_bl: failed to set brightness\n");
+	else if (i > 0)
+		pr_info("mba6x_bl: set brightness retries = %d\n", i);
 }
 
 static int platform_probe(struct platform_device *dev)
