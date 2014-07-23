@@ -37,6 +37,7 @@
 #define LP8550_REG_TEMP_LSB	6
 
 #define INIT_BRIGHTNESS		150
+#define MAX_RETRIES		20
 
 static struct platform_device *platform_device;
 static struct backlight_device *backlight_device;
@@ -251,14 +252,14 @@ static void brightness_work(struct work_struct *work)
 	int ret, i;
 
 	/* Retry for a maximum of 2 seconds */
-	for (i = 0; i < 20; i++) {
+	for (i = 0; i < MAX_RETRIES; i++) {
 		ret = set_brightness(backlight_device->props.brightness);
 		if (!ret)
 			break;
 		msleep(100);
 	}
 
-	if (i >= 10)
+	if (i >= MAX_RETRIES)
 		pr_info("mba6x_bl: failed to set brightness\n");
 	else if (i > 0)
 		pr_info("mba6x_bl: set brightness retries = %d\n", i);
