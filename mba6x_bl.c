@@ -169,12 +169,18 @@ static int set_brightness(int brightness)
 {
 	int ret;
 
+	pr_info("mba6x_bl: Trying to set brightness to %d\n", brightness);
+
 	if (brightness < 0 || brightness > 255)
 		return -EINVAL;
+
+	pr_info("mba6x_bl: Configuring dev ctl\n");
 
 	ret = lp8550_reg_write(LP8550_REG_DEV_CTL, 0x05);
 	if (ret)
 		return -ENODEV;
+
+	pr_info("mba6x_bl: Actually setting brightness to %d\n", brightness);
 
 	brightness = map_brightness(brightness);
 	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, (u8)brightness);
@@ -215,6 +221,8 @@ static int lp8550_save(void)
 {
 	int ret;
 
+	pr_info("mba6x_bl: Saving registers\n");
+
 	ret = lp8550_reg_read(LP8550_REG_DEV_CTL,
 			      &dev_priv.lp8550_regs.dev_ctl);
 	if (ret)
@@ -229,6 +237,8 @@ static int lp8550_save(void)
 static int lp8550_restore(void)
 {
 	int ret;
+
+	pr_info("mba6x_bl: Restoring registers\n");
 
 	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS,
 			       dev_priv.lp8550_regs.brightness);
@@ -313,6 +323,7 @@ static int platform_remove(struct platform_device *dev)
 
 static int platform_resume(struct platform_device *dev)
 {
+	pr_info("mba6x_bl: Resuming...\n");
 	/* We must delay this work to let the SMBUS initialize */
 	schedule_delayed_work(&dev_priv.work, 100);
 
