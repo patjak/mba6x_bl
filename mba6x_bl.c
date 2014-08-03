@@ -182,6 +182,9 @@ static int set_brightness(int brightness)
 
 	pr_info("mba6x_bl: Actually setting brightness to %d\n", brightness);
 
+	/* Wait for the chip to switch mode */
+	msleep(50);
+
 	brightness = map_brightness(brightness);
 	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, (u8)brightness);
 
