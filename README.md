@@ -19,7 +19,7 @@ Then restart X (usually log in / log out will do the trick). The module should a
 ## Debian dkms package
 
 You can either follow the long route <https://wiki.kubuntu.org/Kernel/Dev/DKMSPackaging>, or
-download a pre-made .deb file from <http://miek.nl/downloads/2013/mba6xbl-dkms_0.0.1_all.deb>,
+download a pre-made .deb file from <http://miek.nl/downloads/2014/mba6xbl-dkms_0.0.3_all.deb>,
 which can be installed with `dpkg -i`.
 
 ## Arch Linux dkms package
