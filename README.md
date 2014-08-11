@@ -22,6 +22,9 @@ You can either follow the long route <https://wiki.kubuntu.org/Kernel/Dev/DKMSPa
 download a pre-made .deb file from <http://miek.nl/downloads/2014/mba6xbl-dkms_0.0.3_all.deb>,
 which can be installed with `dpkg -i`.
 
+## Ubuntu specific instructions
+<https://help.ubuntu.com/community/MacBookAir6-2/Trusty#Backlight>
+
 ## Arch Linux dkms package
 An Arch Linux prepared package can be found at
 <https://aur.archlinux.org/packages/mba6x_bl-dkms/>
