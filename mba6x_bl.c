@@ -116,6 +116,7 @@ static int lp8550_reg_write(u8 reg, u8 val)
 	union acpi_object args[3];
 	union acpi_object *result;
 	int ret = 0;
+	u8 read_val;
 
 	mutex_lock(&dev_priv.mutex);
 
@@ -156,6 +157,15 @@ static int lp8550_reg_write(u8 reg, u8 val)
 
 out:
 	mutex_unlock(&dev_priv.mutex);
+
+	/* Read back the register to see if it stuck */
+	lp8550_reg_read(reg, &read_val);
+	if (!ret && read_val != val) {
+		pr_err("mba6x_bl: Read-back failed at reg: 0x%x, val: 0x%x\n",
+			reg, val);
+		ret = -EINVAL;
+	}
+
 	kfree(buffer.pointer);
 	return ret;
 }
@@ -177,7 +187,10 @@ static int set_brightness(int brightness)
 		return -ENODEV;
 
 	brightness = map_brightness(brightness);
+
 	ret = lp8550_reg_write(LP8550_REG_BRIGHTNESS, (u8)brightness);
+	if (ret)
+		return -ENODEV;
 
 	return ret;
 }
