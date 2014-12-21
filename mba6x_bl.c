@@ -20,6 +20,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/notifier.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/backlight.h>
@@ -41,6 +42,12 @@
 
 static struct platform_device *platform_device;
 static struct backlight_device *backlight_device;
+static int backlight_notify(struct notifier_block *self, unsigned long action,
+			    void *data);
+
+struct notifier_block backlight_nb = {
+	.notifier_call = backlight_notify,
+};
 
 static struct {
 	struct delayed_work work;
@@ -272,10 +279,25 @@ static void brightness_work(struct work_struct *work)
 		msleep(100);
 	}
 
-	if (i >= MAX_RETRIES)
+	if (i >= MAX_RETRIES) {
 		pr_info("mba6x_bl: failed to set brightness\n");
-	else if (i > 0)
+		return;
+	} else if (i > 0) {
 		pr_info("mba6x_bl: set brightness retries = %d\n", i);
+	}
+
+	if (backlight_device->props.brightness == 0)
+		backlight_device->props.power = 4;
+	else
+		backlight_device->props.power = 0;
+}
+
+static int backlight_notify(struct notifier_block *self, unsigned long action,
+			    void *data)
+{
+	schedule_delayed_work(&dev_priv.work, 100);
+
+	return 0;
 }
 
 static int platform_probe(struct platform_device *dev)
@@ -296,8 +318,8 @@ static int platform_probe(struct platform_device *dev)
 
 	memset(&props, 0, sizeof(struct backlight_properties));
 	props.max_brightness = 255;
-	props.brightness = INIT_BRIGHTNESS;
 	props.type = BACKLIGHT_FIRMWARE;
+	props.power = 0; /* Power is on */
 
 	backlight_device = backlight_device_register("mba6x_backlight",
 						     NULL, NULL,
@@ -307,10 +329,13 @@ static int platform_probe(struct platform_device *dev)
 		return PTR_ERR(backlight_device);
 	}
 
+	backlight_device->props.brightness = INIT_BRIGHTNESS;
+	backlight_update_status(backlight_device);
+
 	acpi_video_dmi_promote_vendor();
 	acpi_video_unregister();
 
-	backlight_update_status(backlight_device);
+	backlight_register_notifier(&backlight_nb);
 
 	return 0;
 }
