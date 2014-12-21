@@ -18,6 +18,7 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/notifier.h>
@@ -335,7 +336,9 @@ static int platform_probe(struct platform_device *dev)
 	acpi_video_dmi_promote_vendor();
 	acpi_video_unregister();
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
 	backlight_register_notifier(&backlight_nb);
+#endif
 
 	return 0;
 }
