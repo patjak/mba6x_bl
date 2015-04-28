@@ -406,3 +406,4 @@ MODULE_DESCRIPTION("MacBook Air 6,1 and 6,2 backlight driver");
 MODULE_LICENSE("GPL");
 
 MODULE_ALIAS("dmi:*:pnMacBookAir6*");
+MODULE_ALIAS("dmi:*:pnMacBookAir7*");
