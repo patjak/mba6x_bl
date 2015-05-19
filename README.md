@@ -28,3 +28,6 @@ which can be installed with `dpkg -i`.
 ## Arch Linux dkms package
 An Arch Linux prepared package can be found at
 <https://aur.archlinux.org/packages/mba6x_bl-dkms/>
+
+## Gentoo ebuild
+A Gentoo ebuild can be had at <https://github.com/chrisperelstein/gentoo-overlay/blob/master/x11-drivers/mba6x_bl/mba6x_bl-9999.ebuild>. You can install with `layman -o https://github.com/chrisperelstein/gentoo-overlay/raw/master/overlay.xml -a chrisperelstein`, unmasking by adding `=x11-drivers/mba6x_bl-9999::chrisperelstein **` to /etc/portage/package.accept_keywords, followed by `emerge mba6x_bl`.
