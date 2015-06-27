@@ -13,13 +13,13 @@ Note: You no longer need to specify mba6x_bl as your backlight device in /etc/X1
 At this point you can load the module
 
     sudo modprobe mba6x_bl
-    
+
 Then restart X (usually log in / log out will do the trick). The module should automatically load on next boot on any MacBook Air 6,x.
 
 ## Debian dkms package
 
 You can either follow the long route <https://wiki.kubuntu.org/Kernel/Dev/DKMSPackaging>, or
-download a pre-made .deb file from <http://miek.nl/downloads/2014/mba6xbl-dkms_0.0.3_all.deb>,
+download a pre-made .deb file from <http://miek.nl/downloads/2015/mba6xbl-dkms_1.0.0_all.deb>,
 which can be installed with `dpkg -i`.
 
 ## Ubuntu specific instructions
