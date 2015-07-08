@@ -366,14 +366,27 @@ static void platform_shutdown(struct platform_device *dev)
 	lp8550_restore();
 }
 
+static int platform_suspend(struct platform_device *dev, pm_message_t state)
+{
+	int b;
+
+	/* Takes backlight gradually to zero*/
+	for(b = backlight_device->props.brightness; b >= 0 ; b--) {
+		set_brightness(b);
+	}
+
+	return 0;
+}
+
 static struct platform_driver drv = {
 	.probe		= platform_probe,
 	.remove		= platform_remove,
 	.resume		= platform_resume,
+	.suspend 	= platform_suspend,
 	.shutdown	= platform_shutdown,
-	.driver	= {
-		.name = "mba6x_bl",
-		.owner = THIS_MODULE,
+	.driver		= {
+		.name 	= "mba6x_bl",
+		.owner 	= THIS_MODULE,
 	},
 };
 
