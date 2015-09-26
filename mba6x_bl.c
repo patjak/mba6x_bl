@@ -333,7 +333,11 @@ static int platform_probe(struct platform_device *dev)
 	backlight_device->props.brightness = INIT_BRIGHTNESS;
 	backlight_update_status(backlight_device);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+	acpi_video_set_dmi_backlight_type(acpi_backlight_vendor);
+#else
 	acpi_video_dmi_promote_vendor();
+#endif
 	acpi_video_unregister();
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
