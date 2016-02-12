@@ -21,7 +21,6 @@
 #include <linux/version.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/notifier.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/backlight.h>
@@ -43,12 +42,7 @@
 
 static struct platform_device *platform_device;
 static struct backlight_device *backlight_device;
-static int backlight_notify(struct notifier_block *self, unsigned long action,
-			    void *data);
 
-struct notifier_block backlight_nb = {
-	.notifier_call = backlight_notify,
-};
 
 static struct {
 	struct delayed_work work;
@@ -293,14 +287,6 @@ static void brightness_work(struct work_struct *work)
 		backlight_device->props.power = 0;
 }
 
-static int backlight_notify(struct notifier_block *self, unsigned long action,
-			    void *data)
-{
-	schedule_delayed_work(&dev_priv.work, 100);
-
-	return 0;
-}
-
 static int platform_probe(struct platform_device *dev)
 {
 	struct backlight_properties props;
@@ -339,10 +325,6 @@ static int platform_probe(struct platform_device *dev)
 	acpi_video_dmi_promote_vendor();
 #endif
 	acpi_video_unregister();
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
-	backlight_register_notifier(&backlight_nb);
-#endif
 
 	return 0;
 }
