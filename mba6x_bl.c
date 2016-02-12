@@ -331,6 +331,7 @@ static int platform_probe(struct platform_device *dev)
 
 static int platform_remove(struct platform_device *dev)
 {
+	cancel_delayed_work_sync(&dev_priv.work);
 	backlight_device_unregister(backlight_device);
 	lp8550_restore();
 	pr_info("mba6x_bl: Restored old configuration\n");
