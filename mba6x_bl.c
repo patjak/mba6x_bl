@@ -205,6 +205,7 @@ static int get_brightness(struct backlight_device *bdev)
 static int update_status(struct backlight_device *bdev)
 {
 	/* We lock when writing to the SMBUS so work must be scheduled */
+	cancel_delayed_work_sync(&dev_priv.work);
 	schedule_delayed_work(&dev_priv.work, 0);
 
 	return 0;
@@ -285,6 +286,8 @@ static void brightness_work(struct work_struct *work)
 		backlight_device->props.power = 4;
 	else
 		backlight_device->props.power = 0;
+
+	schedule_delayed_work(&dev_priv.work, 3 * HZ);
 }
 
 static int platform_probe(struct platform_device *dev)
@@ -341,9 +344,6 @@ static int platform_remove(struct platform_device *dev)
 
 static int platform_resume(struct platform_device *dev)
 {
-	/* We must delay this work to let the SMBUS initialize */
-	schedule_delayed_work(&dev_priv.work, 100);
-
 	return 0;
 }
 
