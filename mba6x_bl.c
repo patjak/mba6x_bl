@@ -336,12 +336,14 @@ static int platform_remove(struct platform_device *dev)
 
 static int platform_resume(struct platform_device *dev)
 {
+	update_status(backlight_device);
 	return 0;
 }
 
 static void platform_shutdown(struct platform_device *dev)
 {
 	/* We must restore or screen might go black on reboot */
+	cancel_delayed_work_sync(&dev_priv.work);
 	lp8550_restore();
 }
 
