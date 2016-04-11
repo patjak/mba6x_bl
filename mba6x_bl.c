@@ -265,28 +265,20 @@ static struct platform_driver drv;
 
 static void brightness_work(struct work_struct *work)
 {
-	int ret, i;
+	int ret;
 
-	/* Retry for a maximum of 2 seconds */
-	for (i = 0; i < MAX_RETRIES; i++) {
-		ret = set_brightness(backlight_device->props.brightness);
-		if (!ret)
-			break;
-		msleep(100);
-	}
+	ret = set_brightness(backlight_device->props.brightness);
+	if (ret)
+		pr_err("mba6x_bl: failed to set brightness\n");
 
-	if (i >= MAX_RETRIES) {
-		pr_info("mba6x_bl: failed to set brightness\n");
-		return;
-	} else if (i > 0) {
-		pr_info("mba6x_bl: set brightness retries = %d\n", i);
-	}
+	/* Pretend everything is fine even though we failed */
 
 	if (backlight_device->props.brightness == 0)
 		backlight_device->props.power = 4;
 	else
 		backlight_device->props.power = 0;
 
+	/* Reschedule the next update */
 	schedule_delayed_work(&dev_priv.work, 3 * HZ);
 }
 
