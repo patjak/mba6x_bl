@@ -267,11 +267,18 @@ static void brightness_work(struct work_struct *work)
 {
 	int ret;
 
+	/* Don't set backlight if it's already powered off */
+	if (backlight_device->props.power == 4 &&
+	    backlight_device->props.brightness == 0) {
+		pr_info("mba6x_bl: skipping to set backlight since it's already off\n");
+		return;
+	}
+
 	ret = set_brightness(backlight_device->props.brightness);
+
+	/* Warn but reschedule even if we failed */
 	if (ret)
 		pr_err("mba6x_bl: failed to set brightness\n");
-
-	/* Pretend everything is fine even though we failed */
 
 	if (backlight_device->props.brightness == 0)
 		backlight_device->props.power = 4;
@@ -336,7 +343,9 @@ static int platform_remove(struct platform_device *dev)
 
 static int platform_resume(struct platform_device *dev)
 {
-	update_status(backlight_device);
+	/* Reschedule the next update */
+	schedule_delayed_work(&dev_priv.work, 3 * HZ);
+
 	return 0;
 }
 
