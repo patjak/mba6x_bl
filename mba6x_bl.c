@@ -96,7 +96,7 @@ static int lp8550_reg_read(u8 reg, u8 *val)
 	result = buffer.pointer;
 
 	if (result->type != ACPI_TYPE_INTEGER) {
-		pr_err("mba6x_bl: Invalid response in reg: 0x%x (len: %Ld)\n",
+		pr_debug("mba6x_bl: Invalid response in reg: 0x%x (len: %Ld)\n",
 			 reg, buffer.length);
 		ret = -EINVAL;
 		goto out;
@@ -151,7 +151,7 @@ static int lp8550_reg_write(u8 reg, u8 val)
 	result = buffer.pointer;
 
 	if (result->type != ACPI_TYPE_INTEGER || result->integer.value != 1) {
-		pr_err("mba6x_bl: Invalid response at reg: 0x%x (len: %Ld)\n",
+		pr_debug("mba6x_bl: Invalid response at reg: 0x%x (len: %Ld)\n",
 			 reg, buffer.length);
 		ret = -EINVAL;
 		goto out;
@@ -278,7 +278,7 @@ static void brightness_work(struct work_struct *work)
 
 	/* Warn but reschedule even if we failed */
 	if (ret)
-		pr_err("mba6x_bl: failed to set brightness\n");
+		pr_debug("mba6x_bl: failed to set brightness\n");
 
 	if (backlight_device->props.brightness == 0)
 		backlight_device->props.power = 4;
