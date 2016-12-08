@@ -1,0 +1,10 @@
+# Object Files
+*.ko
+*.o
+
+# Kernel module compile results
+*.cmd
+*.mod.*
+modules.order
+Module.symvers
+.tmp_versions
